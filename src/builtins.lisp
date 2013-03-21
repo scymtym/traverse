@@ -1,55 +1,53 @@
-;;; builtins.lisp ---
-;;
-;; Copyright (C) 2012 Jan Moringen
-;;
-;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
-;;
-;; This Program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-;;
-;; This Program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with this program. If not, see <http://www.gnu.org/licenses>.
+;;;; builtins.lisp ---
+;;;;
+;;;; Copyright (C) 2012, 2013 Jan Moringen
+;;;;
+;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package :traverse)
+(cl:in-package #:traverse)
 
-
 ;;; Cons
-;;
 
 (defmethod make-traverser/pure ((structure cons)
-				(traversal (eql :dfs)))
-  (cont:with-call/cc
+                                (traversal (eql :dfs)))
+  (with-yield
     (labels ((next (cell)
-	       (cont:let/cc k
-		 (values cell k))
-	       (if (atom cell)
-		   (values nil nil)
-		   (progn
-		     (next (car cell))
-		     (next (cdr cell))))))
+               (yield cell)
+               (if (atom cell)
+                   (values nil nil)
+                   (progn
+                     (next (car cell))
+                     (next (cdr cell))))))
       (curry #'next structure))))
 
 (defmethod make-traverser/pure ((structure cons)
-				(traversal (eql :bfs)))
-  (cont:with-call/cc
+                                (traversal (eql :bfs)))
+  (with-yield
     (labels ((next (head last)
-	       (if head
-		   (progn
-		     (when (consp (car head))
-		       (let+ (((car . cdr) (car head)))
-			 (unless (eq (cadr last) car)
-			   (setf (cdr last) (cons car (cons cdr nil))))
-			 (setf last (cddr last))))
-		     (cont:let/cc k
-		       (values (car head) k))
-		     (next (rest head) last))
-		   (values nil nil))))
+               (if head
+                   (progn
+                     (when (consp (car head))
+                       (let+ (((car . cdr) (car head)))
+                         (unless (eq (cadr last) car)
+                           (setf (cdr last) (cons car (cons cdr nil))))
+                         (setf last (cddr last))))
+                     (yield (car head))
+                     (next (rest head) last))
+                   (values nil nil))))
       (let ((queue (list structure)))
-	(curry #'next queue queue)))))
+        (curry #'next queue queue)))))
+
+;;; Vector
+
+(defmethod make-traverser/pure ((structure vector)
+                                (traversal (eql :dfs)))
+  (lambda ()
+    (with-yield
+      (iter (for element in-vector structure)
+            (yield element)))))
+
+(sb-sprof:with-profiling ()
+  (let ((s (make-array 10000000)))
+    (time
+     (let ((tr (make-traverser/pure s :dfs)))
+       (count 0 (make-instance 'traversal-sequence :traverser tr))))))
