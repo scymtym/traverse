@@ -1,0 +1,42 @@
+#+TITLE:       utilities.sequence README
+#+AUTHOR:      Jan Moringen
+#+EMAIL:       jmoringe@techfak.uni-bielefeld.de
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:    en
+
+* TODO Introduction
+  In a nutshell, the =protocol.traverse= system allows two things
+  1.  =
+  2. View traversal as lazy sequences and make lazy sequences:
+     #+BEGIN_SRC: lisp
+     (let ((numbers (generating (loop for i :from 0 do (yield i)))))
+       (subseq (remove-if #'evenp numbers) 0 10))
+     #+END_SRC
+* TODO Tutorial
+* TODO Design
+  Protocols
+** Traverser protocol
+      =traverser= [type]
+      1. Client Protocol:
+         =make-traverser/pure=
+         =make-traverser/stateful=
+      1.
+      2. Traversal provider protocol
+         1. Low-level traversal provider helpers
+            =yield=, =with-yield=
+         2. Simple traversal provider protocol
+            =successors=
+** Sequence protocol
+   There is no "Sequence client protocol" since traversal sequences
+   are used like any other sequence, i.e. via =cl:length=, =cl:elt=,
+   =cl:remove-if=.
+*** Sequence provider protocol
+    =generating=
+* TODO Reference
+
+
+* Settings                                                         :noexport:
+
+#+OPTIONS: H:2 num:nil toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
